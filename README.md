@@ -1,6 +1,6 @@
 # Trumpet Exercise App
 
-A browser-based trumpet practice app for musicians. Practice held notes, scales, arpeggios, chromatic scales, and etudes with rendered sheet music in your browser. Play exercises with synthesized trumpet audio, click individual notes to hear them, and see fingering hints under each note.
+A browser-based trumpet practice app for (aspiring) musicians. Practice held notes, scales, arpeggios, chromatic scales, and etudes with rendered sheet music in your browser. Play exercises with synthesized trumpet audio, click individual notes to hear them, and see fingering hints under each note.
 
 ## Tech Stack
 
