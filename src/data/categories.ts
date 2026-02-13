@@ -6,4 +6,5 @@ export const categories: Category[] = [
   { id: 'arpeggios', name: 'Arpeggios' },
   { id: 'chromatic-scales', name: 'Chromatic Scales' },
   { id: 'etudes', name: 'Etudes' },
+  { id: 'flashcards', name: 'Flashcards' },
 ];

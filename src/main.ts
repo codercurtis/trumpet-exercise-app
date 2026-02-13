@@ -3,12 +3,14 @@ import { createCategoryView } from './views/CategoryView';
 import { createKeyView } from './views/KeyView';
 import { createExerciseView } from './views/ExerciseView';
 import { createCustomExerciseSelectView } from './views/CustomExerciseSelectView';
+import { createFlashcardView } from './views/FlashcardView';
 
 type Screen =
   | { type: 'category' }
   | { type: 'key'; categoryId: string }
   | { type: 'custom-select'; categoryId: string }
-  | { type: 'exercise'; categoryId: string; keyId: string; customKeyIds?: string[] };
+  | { type: 'exercise'; categoryId: string; keyId: string; customKeyIds?: string[] }
+  | { type: 'flashcard'; exerciseId: string };
 
 let stack: Screen[] = [{ type: 'category' }];
 
@@ -35,7 +37,13 @@ function render(): void {
 
   if (current.type === 'category') {
     const view = createCategoryView(
-      (categoryId) => push({ type: 'key', categoryId }),
+      (categoryId) => {
+        if (categoryId === 'flashcards') {
+          push({ type: 'flashcard', exerciseId: 'notes' });
+        } else {
+          push({ type: 'key', categoryId });
+        }
+      },
       pop,
       stack.length > 1
     );
@@ -77,6 +85,12 @@ function render(): void {
       pop,
       current.customKeyIds
     );
+    app.appendChild(view);
+    return;
+  }
+
+  if (current.type === 'flashcard') {
+    const view = createFlashcardView(current.exerciseId, pop);
     app.appendChild(view);
     return;
   }

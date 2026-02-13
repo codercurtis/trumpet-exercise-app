@@ -32,7 +32,8 @@ interface NotePair {
 
 function createTrumpetAnnotationHook(
   noteNames: string[],
-  notePairs: NotePair[]
+  notePairs: NotePair[],
+  showAnnotations: boolean
 ): CommitHook {
   let noteIndex = 0;
   return (_options, note, builder) => {
@@ -40,20 +41,22 @@ function createTrumpetAnnotationHook(
       noteIndex++;
       return;
     }
-    const factory = builder.getFactory();
     const noteName = noteNames[noteIndex];
     notePairs.push({ note, noteName });
-    const fingering = getFingering(noteName);
-    const noteAnnotation = factory.Annotation({
-      text: noteName,
-      vJustify: 'bottom',
-    });
-    const fingeringAnnotation = factory.Annotation({
-      text: fingering,
-      vJustify: 'bottom',
-    });
-    note.addModifier(noteAnnotation, 0);
-    note.addModifier(fingeringAnnotation, 0);
+    if (showAnnotations) {
+      const factory = builder.getFactory();
+      const fingering = getFingering(noteName);
+      const noteAnnotation = factory.Annotation({
+        text: noteName,
+        vJustify: 'bottom',
+      });
+      const fingeringAnnotation = factory.Annotation({
+        text: fingering,
+        vJustify: 'bottom',
+      });
+      note.addModifier(noteAnnotation, 0);
+      note.addModifier(fingeringAnnotation, 0);
+    }
     noteIndex++;
   };
 }
@@ -64,7 +67,8 @@ export function renderMusic(
   timeSignature = '4/4',
   noteNames: string[] = [],
   totalBeats?: number,
-  beamGroups?: number
+  beamGroups?: number,
+  showAnnotations = true
 ): void {
   container.innerHTML = '';
   const id = `vexflow-output-${++renderId}`;
@@ -76,14 +80,14 @@ export function renderMusic(
   const notesPerStaveEst = beamGroups ? 16 : Math.max(1, Math.round((8 * totalNotes) / beats));
   const estimatedNumStaves = Math.max(1, Math.ceil(totalNotes / notesPerStaveEst));
 
-  const renderWidth = beats > 8 ? 1000 : 600;
+  const renderWidth = beats > 8 ? 1000 : !showAnnotations ? 800 : 600;
   div.style.width = `${renderWidth}px`;
   const staveHeight = 100;
   const height = 80 + estimatedNumStaves * staveHeight;
   div.style.minHeight = `${height}px`;
   container.appendChild(div);
 
-  const width = beats > 8 ? 1000 : 600;
+  const width = beats > 8 ? 1000 : !showAnnotations ? 800 : 600;
   const vf = new Factory({
     renderer: {
       elementId: id,
@@ -95,7 +99,7 @@ export function renderMusic(
 
   const score = vf.EasyScore();
   const notePairs: NotePair[] = [];
-  const trumpetHook = createTrumpetAnnotationHook(noteNames, notePairs);
+  const trumpetHook = createTrumpetAnnotationHook(noteNames, notePairs, showAnnotations);
   score.addCommitHook(trumpetHook);
 
   const BEATS_PER_STAVE = 8;
@@ -153,7 +157,7 @@ export function renderMusic(
 
     const totalBeatsForLayout = totalBeats ?? noteCount;
     const beatsPerNote = totalBeatsForLayout / noteCount;
-    const beatsPerStave = 16;
+    const beatsPerStave = !showAnnotations ? totalBeatsForLayout : 16;
     const notesPerStave = Math.min(
       noteCount,
       Math.max(1, Math.floor(beatsPerStave / beatsPerNote))
@@ -191,7 +195,9 @@ export function renderMusic(
 
       const stave = system.addStave({ voices: [voice] });
       stave.setBegBarType(BarlineType.SINGLE);
-      stave.setEndBarType(s === numStaves - 1 ? BarlineType.END : BarlineType.SINGLE);
+      stave.setEndBarType(
+        !showAnnotations ? BarlineType.NONE : s === numStaves - 1 ? BarlineType.END : BarlineType.SINGLE
+      );
       stave.addClef('treble');
       if (s === 0) stave.addTimeSignature(timeSignature);
     }
