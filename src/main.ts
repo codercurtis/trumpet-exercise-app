@@ -1,4 +1,5 @@
 import './styles.css';
+import { initSpacingDebug } from './debugSpacing';
 import { createCategoryView } from './views/CategoryView';
 import { createKeyView } from './views/KeyView';
 import { createExerciseView } from './views/ExerciseView';
@@ -96,4 +97,5 @@ function render(): void {
   }
 }
 
+initSpacingDebug();
 render();

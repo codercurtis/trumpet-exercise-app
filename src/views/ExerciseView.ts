@@ -11,6 +11,7 @@ export function createExerciseView(
 ): HTMLElement {
   const root = document.createElement('div');
   root.className = 'view exercise-view';
+  root.dataset.debugBox = 'exercise-view';
 
   const exercise =
     customKeyIds && customKeyIds.length > 0
@@ -43,19 +44,27 @@ export function createExerciseView(
 
   const musicContainer = document.createElement('div');
   musicContainer.className = 'music-container';
+  musicContainer.dataset.debugBox = 'music-container';
 
   root.appendChild(header);
   root.appendChild(musicContainer);
 
   requestAnimationFrame(() => {
-    renderMusic(
-      musicContainer,
-      exercise.notes,
-      exercise.timeSignature ?? '4/4',
-      exercise.noteNames,
-      exercise.totalBeats,
-      exercise.beamGroups
-    );
+    try {
+      renderMusic(musicContainer, exercise.notes, {
+        timeSignature: exercise.timeSignature ?? '4/4',
+        noteNames: exercise.noteNames,
+        totalBeats: exercise.totalBeats,
+        beamGroups: exercise.beamGroups,
+        showAnnotations: true,
+        keySignature: exercise.keySignature,
+        beamIndices: exercise.beamIndices,
+        measureBoundaries: exercise.measureBoundaries,
+      });
+    } catch (err) {
+      console.error('Music render error:', err);
+      musicContainer.textContent = `Error rendering music: ${err instanceof Error ? err.message : String(err)}`;
+    }
   });
 
   return root;

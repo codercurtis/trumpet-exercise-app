@@ -23,7 +23,9 @@ export function createKeyView(
       ? `Choose Chromatic Scale`
       : categoryId === 'etudes'
         ? `Choose Etude`
-        : categoryId === 'scales' || categoryId === 'held-notes'
+        : categoryId === 'songs'
+          ? `Choose Song`
+          : categoryId === 'scales' || categoryId === 'held-notes'
           ? categoryId === 'scales'
             ? `Choose Scale`
             : `Choose Key for Held Notes`

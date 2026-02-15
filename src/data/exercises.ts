@@ -1,6 +1,46 @@
 import type { Exercise } from '../types';
 import { keys } from './keys';
 
+/** Songs: melody excerpts for trumpet practice */
+export const songs: {
+  id: string;
+  displayName: string;
+  notes: string;
+  noteNames: string[];
+  totalBeats?: number;
+  keySignature?: string;
+  beamIndices?: number[][];
+  measureBoundaries?: number[];
+}[] = [
+  {
+    id: 'la-vie-en-rose',
+    displayName: 'La Vie en Rose',
+    notes:
+      'D5/q., C#5/8, B4/8, A4/8, F#4/8, D5/8, C#5/q., B4/8, A4/8, F#4/8, D4/8, C#5/8, B4/q., A4/8, F#4/8, C#4/8, D4/8, C#5/8, B4/h, A4/h, E5/q., D5/8, C#5/8, B4/8, G4/8, D5/8, C#5/q., B4/8, A4/8, G4/8, E4/8, C#5/8, B4/q., A4/8, G4/8, D#4/8, E4/8, C#5/8, B4/h, A4/h, D5/q., C#5/8, B4/8, A4/8, F#4/8, D5/8, C#5/q., B4/8, A4/8, F#4/8, D4/8, C#5/8, B4/q., A4/8, F4/8, C#4/8, D4/8, D5/8, D5/w, E5/8, E5/q, D5/8, E5/8, E5/q, D5/8, E5/8, E5/q, D5/8, A4/h, E5/8, E5/q, D5/8, E5/8, E5/q, D5/8, E5/8, E5/q, D5/8, F5/q, E5/q, D5/q., C#5/8, B4/8, A4/8, F#4/8, D5/8, C#5/q., B4/8, A4/8, F#4/8, D4/8, C#5/8, B4/q., A4/8, B4/q, C#5/q, D#5/w',
+    noteNames: [
+      'D5', 'C#5', 'B4', 'A4', 'F#4', 'D5', 'C#5', 'B4', 'A4', 'F#4', 'D4', 'C#5', 'B4', 'A4', 'F#4',
+      'C#4', 'D4', 'C#5', 'B4', 'A4',
+      'E5', 'D5', 'C#5', 'B4', 'G4', 'D5', 'C#5', 'B4', 'A4', 'G4', 'E4', 'C#5', 'B4', 'A4', 'G4',
+      'D#4', 'E4', 'C#5', 'B4', 'A4',
+      'D5', 'C#5', 'B4', 'A4', 'F#4', 'D5', 'C#5', 'B4', 'A4', 'F#4', 'D4', 'C#5', 'B4', 'A4', 'F4',
+      'C#4', 'D4', 'D5', 'D5',
+      'E5', 'E5', 'D5', 'E5', 'E5', 'D5', 'E5', 'E5', 'D5', 'A4', 'E5', 'E5', 'D5', 'E5', 'E5', 'D5',
+      'E5', 'E5', 'D5', 'F5', 'E5',
+      'D5', 'C#5', 'B4', 'A4', 'F#4', 'D5', 'C#5', 'B4', 'A4', 'F#4', 'D4', 'C#5', 'B4', 'A4', 'B4', 'C#5', 'D#5',
+    ],
+    totalBeats: 80,
+    keySignature: 'D',
+    beamIndices: [
+      [2, 3, 4, 5], [8, 9, 10, 11], [14, 15, 16, 17],
+      [22, 23, 24, 25], [28, 29, 30, 31], [34, 35, 36, 37],
+      [42, 43, 44, 45], [48, 49, 50, 51], [54, 55, 56, 57],
+      [61, 62], [71, 72],
+      [82, 83, 84, 85], [88, 89, 90, 91],
+    ],
+    measureBoundaries: [5, 11, 17, 19, 25, 31, 37, 39, 45, 51, 57, 58, 64, 68, 74, 79, 85, 91, 95, 96],
+  },
+];
+
 /** Etudes: predefined short study pieces */
 export const etudes: { id: string; displayName: string; notes: string; noteNames: string[]; beamGroups?: number; totalBeats?: number }[] = [
   {
@@ -231,6 +271,34 @@ export function getExercise(categoryId: string, keyId: string): Exercise {
     };
   }
 
+  if (categoryId === 'songs') {
+    const song = songs.find((s) => s.id === keyId);
+    if (!song) {
+      return {
+        id,
+        categoryId,
+        keyId,
+        title: 'Song',
+        notes: 'C4/q',
+        noteNames: ['C4'],
+        timeSignature: '4/4',
+      };
+    }
+    return {
+      id,
+      categoryId,
+      keyId,
+      title: song.displayName,
+      notes: song.notes,
+      noteNames: song.noteNames,
+      timeSignature: '4/4',
+      totalBeats: song.totalBeats ?? song.noteNames.length,
+      keySignature: song.keySignature,
+      beamIndices: song.beamIndices,
+      measureBoundaries: song.measureBoundaries,
+    };
+  }
+
   if (categoryId === 'chromatic-scales') {
     const chrom = chromaticExercises.find((e) => e.id === keyId);
     if (!chrom) {
@@ -277,6 +345,8 @@ export function getItemsForCategory(categoryId: string): { id: string; displayNa
       return chromaticExercises.map((e) => ({ id: e.id, displayName: e.displayName }));
     case 'etudes':
       return etudes.map((e) => ({ id: e.id, displayName: e.displayName }));
+    case 'songs':
+      return songs.map((s) => ({ id: s.id, displayName: s.displayName }));
     case 'scales':
     case 'held-notes':
       return scaleKeys.map((k) => ({ id: k.id, displayName: k.displayName }));
@@ -299,6 +369,7 @@ function ensureFirstNoteDuration(notes: string, durationCode: string): string {
 function getDurationCodeForCategory(categoryId: string): string {
   if (categoryId === 'held-notes') return 'h';
   if (categoryId === 'etudes') return '8';
+  if (categoryId === 'songs') return 'q';
   return 'q'; // scales, arpeggios, chromatic-scales
 }
 

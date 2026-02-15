@@ -9,15 +9,12 @@ function pickRandomNote(): string {
 }
 
 function renderNote(container: HTMLElement, noteName: string, showAnnotations: boolean): void {
-  renderMusic(
-    container,
-    `${noteName}/w`,
-    '4/4',
-    [noteName],
-    4,
-    undefined,
-    showAnnotations
-  );
+  renderMusic(container, `${noteName}/w`, {
+    timeSignature: '4/4',
+    noteNames: [noteName],
+    totalBeats: 4,
+    showAnnotations,
+  });
 }
 
 export function createFlashcardView(
@@ -26,6 +23,7 @@ export function createFlashcardView(
 ): HTMLElement {
   const root = document.createElement('div');
   root.className = 'view exercise-view';
+  root.dataset.debugBox = 'exercise-view';
 
   const header = document.createElement('div');
   header.className = 'view-header';
@@ -43,6 +41,7 @@ export function createFlashcardView(
 
   const musicContainer = document.createElement('div');
   musicContainer.className = 'music-container';
+  musicContainer.dataset.debugBox = 'music-container';
 
   root.appendChild(header);
   root.appendChild(musicContainer);

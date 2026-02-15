@@ -157,7 +157,8 @@ const DURATION_BEATS: Record<string, number> = {
 
 /**
  * Parse EasyScore notes string to extract duration (in beats) for each note.
- * E.g. "C4/q, D4, E4" -> [1, 1, 1]; "C4/h, D4" -> [2, 2]
+ * E.g. "C4/q, D4, E4" -> [1, 1, 1]; "C4/q., D4" -> [1.5, 1]; rests are excluded.
+ * Returns durations aligned with noteNames (skips rest segments).
  */
 function parseNoteDurations(notes: string): number[] {
   const segments = notes.split(',').map((s) => s.trim());
@@ -165,12 +166,14 @@ function parseNoteDurations(notes: string): number[] {
   let currentBeats = 1; // default quarter note
 
   for (const seg of segments) {
-    const durationMatch = seg.match(/\/([whq]|8|16|32)$/i);
+    const isRest = /^r\b/i.test(seg);
+    const durationMatch = seg.match(/\/([whq]|8|16|32)(\.)?$/i);
     if (durationMatch) {
       const code = durationMatch[1].toLowerCase();
-      currentBeats = DURATION_BEATS[code] ?? 1;
+      const dotted = !!durationMatch[2];
+      currentBeats = (DURATION_BEATS[code] ?? 1) * (dotted ? 1.5 : 1);
     }
-    durations.push(currentBeats);
+    if (!isRest) durations.push(currentBeats);
   }
   return durations;
 }

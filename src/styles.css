@@ -106,7 +106,8 @@ body {
 .music-container {
   display: flex;
   justify-content: center;
-  padding: 2rem;
+  align-items: flex-start; /* Render at top; prevents extra whitespace above for songs/etudes */
+  padding: 0.5rem 2rem 2rem;
   background: white;
   border-radius: 8px;
   min-height: 200px;
@@ -125,4 +126,51 @@ body {
 .note-clickable:hover {
   opacity: 0.85;
 }
+
+/* Spacing debug: add #debug-spacing to URL to show color-coded bounding boxes */
+body.debug-spacing [data-debug-box='exercise-view'] {
+  outline: 4px solid #e63946;
+  outline-offset: 2px;
+}
+body.debug-spacing .music-container {
+  outline: 4px solid #457b9d;
+  outline-offset: 2px;
+}
+body.debug-spacing .music-container > [data-debug-box='vexflow-output'] {
+  outline: 4px solid #2a9d8f;
+  outline-offset: 2px;
+}
+body.debug-spacing .music-container svg {
+  outline: 4px solid #e9c46a;
+  outline-offset: 2px;
+}
+
+#debug-spacing-legend {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.75rem 1rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  z-index: 9999;
+  color: #eee;
+}
+#debug-spacing-legend ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+#debug-spacing-legend .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+#debug-spacing-legend .swatch-red { background: #e63946; }
+#debug-spacing-legend .swatch-blue { background: #457b9d; }
+#debug-spacing-legend .swatch-green { background: #2a9d8f; }
+#debug-spacing-legend .swatch-amber { background: #e9c46a; }
 
