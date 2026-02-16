@@ -50,6 +50,28 @@ function insertMeasureBars<T>(
   return result;
 }
 
+/** Get max notes in any stave when using measureBoundaries (for accurate width). */
+function getMaxNotesPerStaveFromMeasureBoundaries(
+  noteCount: number,
+  measureBoundaries: number[],
+  measuresPerStave: number
+): number {
+  const measureEnds = [...measureBoundaries];
+  if (measureEnds[measureEnds.length - 1] !== noteCount - 1) {
+    measureEnds.push(noteCount - 1);
+  }
+  let maxChunk = 0;
+  let prevStart = 0;
+  for (let m = measuresPerStave - 1; m < measureEnds.length; m += measuresPerStave) {
+    const end = measureEnds[m] + 1;
+    maxChunk = Math.max(maxChunk, end - prevStart);
+    if (m + measuresPerStave < measureEnds.length) {
+      prevStart = measureEnds[m] + 1;
+    }
+  }
+  return maxChunk;
+}
+
 function computeChunkRanges(
   noteCount: number,
   beatsPerNote: number,
@@ -195,15 +217,35 @@ export function renderMusic(
       ? Math.ceil(measureBoundaries.length / MEASURES_PER_STAVE)
       : Math.max(1, Math.ceil(totalNotes / notesPerStaveEst));
 
-  // Dynamic width: short exercises get enough room for annotations; long ones (songs) get full width
-  const minWidth = showAnnotations ? 720 : 500;
-  const maxWidth = showAnnotations ? 1600 : 800;
-  const pxPerNote = showAnnotations ? 35 : 20;
-  const width = Math.min(maxWidth, Math.max(minWidth, totalNotes * pxPerNote));
+  // Dynamic width: base on notes per line (not total) to avoid excess whitespace on multi-stave exercises
+  const minWidth = showAnnotations ? 1150 : 800;
+  const maxWidth = showAnnotations ? 2400 : 1400;
+  const pxPerNote = showAnnotations ? 60 : 36;
+  let notesPerLine =
+    estimatedNumStaves > 1 ? notesPerStaveEst : totalNotes;
+  // Songs with measureBoundaries: use actual max notes per stave (can exceed estimate)
+  if (
+    estimatedNumStaves > 1 &&
+    measureBoundaries &&
+    measureBoundaries.length >= MEASURES_PER_STAVE
+  ) {
+    const actualMax = getMaxNotesPerStaveFromMeasureBoundaries(
+      totalNotes,
+      measureBoundaries,
+      MEASURES_PER_STAVE
+    );
+    notesPerLine = Math.max(notesPerLine, actualMax);
+  }
+  // Add buffer for end bar line and padding so last measure isn't cut off
+  const widthBuffer = 100;
+  const width = Math.min(
+    maxWidth,
+    Math.max(minWidth, notesPerLine * pxPerNote + widthBuffer)
+  );
   div.style.width = `${width}px`;
-  const topPadding = 24;
-  const staveHeight = 70;
-  const height = topPadding + 40 + estimatedNumStaves * staveHeight;
+  const topPadding = 40;
+  const staveHeight = 115;
+  const height = topPadding + 60 + estimatedNumStaves * staveHeight;
   div.style.minHeight = `${height}px`;
   container.appendChild(div);
 
@@ -214,6 +256,7 @@ export function renderMusic(
       height,
       backend: Renderer.Backends.SVG,
     },
+    stave: { space: 18 }, // Larger staff and notes (default 10) for better readability
   });
 
   const score = vf.EasyScore();
@@ -372,7 +415,7 @@ export function renderMusic(
 
   // Fit div height to actual content: bottom of last staff + padding (DOM measurement)
   const svg = div.querySelector('svg');
-  const bottomPadding = 60;
+  const bottomPadding = 100;
   if (svg) {
     const fitHeightToContent = (): void => {
       const divRect = div.getBoundingClientRect();
