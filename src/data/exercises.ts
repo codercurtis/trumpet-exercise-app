@@ -67,7 +67,7 @@ const PITCH_TO_SEMITONE: Record<string, number> = {
   'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11,
 };
 
-function noteToSemitones(note: string): number {
+export function noteToSemitones(note: string): number {
   const match = note.match(/^([A-G][#b]?)(\d+)$/);
   if (!match) return 48; // C4
   const pitchIdx = PITCH_TO_SEMITONE[match[1]] ?? 0;

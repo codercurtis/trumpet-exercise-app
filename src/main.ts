@@ -5,13 +5,15 @@ import { createKeyView } from './views/KeyView';
 import { createExerciseView } from './views/ExerciseView';
 import { createCustomExerciseSelectView } from './views/CustomExerciseSelectView';
 import { createFlashcardView } from './views/FlashcardView';
+import { createSettingsView } from './views/SettingsView';
 
 type Screen =
   | { type: 'category' }
   | { type: 'key'; categoryId: string }
   | { type: 'custom-select'; categoryId: string }
   | { type: 'exercise'; categoryId: string; keyId: string; customKeyIds?: string[] }
-  | { type: 'flashcard'; exerciseId: string };
+  | { type: 'flashcard'; exerciseId: string }
+  | { type: 'settings' };
 
 let stack: Screen[] = [{ type: 'category' }];
 
@@ -46,7 +48,8 @@ function render(): void {
         }
       },
       pop,
-      stack.length > 1
+      stack.length > 1,
+      () => push({ type: 'settings' })
     );
     app.appendChild(view);
     return;
@@ -92,6 +95,12 @@ function render(): void {
 
   if (current.type === 'flashcard') {
     const view = createFlashcardView(current.exerciseId, pop);
+    app.appendChild(view);
+    return;
+  }
+
+  if (current.type === 'settings') {
+    const view = createSettingsView(pop);
     app.appendChild(view);
     return;
   }

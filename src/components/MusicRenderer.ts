@@ -220,7 +220,8 @@ export function renderMusic(
   // Dynamic width: base on notes per line (not total) to avoid excess whitespace on multi-stave exercises
   const minWidth = showAnnotations ? 1150 : 800;
   const maxWidth = showAnnotations ? 2400 : 1400;
-  const pxPerNote = showAnnotations ? 60 : 36;
+  const pxPerNote = showAnnotations ? 60 : 42;
+  const widthBuffer = showAnnotations ? 100 : 200;
   let notesPerLine =
     estimatedNumStaves > 1 ? notesPerStaveEst : totalNotes;
   // Songs with measureBoundaries: use actual max notes per stave (can exceed estimate)
@@ -237,7 +238,6 @@ export function renderMusic(
     notesPerLine = Math.max(notesPerLine, actualMax);
   }
   // Add buffer for end bar line and padding so last measure isn't cut off
-  const widthBuffer = 100;
   const width = Math.min(
     maxWidth,
     Math.max(minWidth, notesPerLine * pxPerNote + widthBuffer)
@@ -295,8 +295,7 @@ export function renderMusic(
       voice.setStrict(false);
 
       const beams = Beam.generateBeams(chunk, {
-        groups: [new Fraction(beamGroups, 8)],
-        maintainStemDirections: true,
+        groups: [new Fraction(4, 8)], // Always beam eighth notes in groups of four
       });
       etudeBeams.push(...beams);
 

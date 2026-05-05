@@ -1,11 +1,18 @@
 import { trumpetFingering } from '../data/trumpetFingering';
+import { noteToSemitones } from '../data/exercises';
 import { createBackButton } from '../components/BackButton';
 import { renderMusic } from '../components/MusicRenderer';
 
-const NOTE_NAMES = Object.keys(trumpetFingering);
+const MIN_SEMITONES = noteToSemitones('C4');
+const MAX_SEMITONES = noteToSemitones('G5');
+
+const FLASHCARD_NOTE_NAMES = Object.keys(trumpetFingering).filter((name) => {
+  const s = noteToSemitones(name);
+  return s >= MIN_SEMITONES && s <= MAX_SEMITONES;
+});
 
 function pickRandomNote(): string {
-  return NOTE_NAMES[Math.floor(Math.random() * NOTE_NAMES.length)];
+  return FLASHCARD_NOTE_NAMES[Math.floor(Math.random() * FLASHCARD_NOTE_NAMES.length)];
 }
 
 function renderNote(container: HTMLElement, noteName: string, showAnnotations: boolean): void {

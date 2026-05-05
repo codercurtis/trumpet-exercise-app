@@ -4,7 +4,8 @@ import { createBackButton } from '../components/BackButton';
 export function createCategoryView(
   onSelectCategory: (categoryId: string) => void,
   onBack: () => void,
-  showBackButton: boolean
+  showBackButton: boolean,
+  onSettings?: () => void
 ): HTMLElement {
   const root = document.createElement('div');
   root.className = 'view category-view';
@@ -26,6 +27,14 @@ export function createCategoryView(
     card.textContent = cat.name;
     card.addEventListener('click', () => onSelectCategory(cat.id));
     grid.appendChild(card);
+  }
+
+  if (onSettings) {
+    const settingsCard = document.createElement('button');
+    settingsCard.className = 'category-card';
+    settingsCard.textContent = 'Settings';
+    settingsCard.addEventListener('click', onSettings);
+    grid.appendChild(settingsCard);
   }
 
   root.appendChild(header);

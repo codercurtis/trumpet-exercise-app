@@ -2,6 +2,7 @@ import { getExercise, combineExercises } from '../data/exercises';
 import { createBackButton } from '../components/BackButton';
 import { renderMusic } from '../components/MusicRenderer';
 import { playExercise } from '../audio/trumpetSound';
+import { getShowAnnotations } from '../settings';
 
 export function createExerciseView(
   categoryId: string,
@@ -43,7 +44,7 @@ export function createExerciseView(
   header.appendChild(playBtn);
 
   const musicContainer = document.createElement('div');
-  musicContainer.className = 'music-container';
+  musicContainer.className = 'music-container' + (getShowAnnotations() ? '' : ' annotations-off');
   musicContainer.dataset.debugBox = 'music-container';
 
   root.appendChild(header);
@@ -56,7 +57,7 @@ export function createExerciseView(
         noteNames: exercise.noteNames,
         totalBeats: exercise.totalBeats,
         beamGroups: exercise.beamGroups,
-        showAnnotations: true,
+        showAnnotations: getShowAnnotations(),
         keySignature: exercise.keySignature,
         beamIndices: exercise.beamIndices,
         measureBoundaries: exercise.measureBoundaries,
