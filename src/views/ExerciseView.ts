@@ -1,4 +1,5 @@
 import { getExercise, combineExercises } from '../data/exercises';
+import type { ScaleModeId } from '../data/scaleModes';
 import { createBackButton } from '../components/BackButton';
 import { renderMusic } from '../components/MusicRenderer';
 import { playExercise } from '../audio/trumpetSound';
@@ -8,7 +9,8 @@ export function createExerciseView(
   categoryId: string,
   keyId: string,
   onBack: () => void,
-  customKeyIds?: string[]
+  customKeyIds?: string[],
+  scaleModeId?: ScaleModeId
 ): HTMLElement {
   const root = document.createElement('div');
   root.className = 'view exercise-view';
@@ -17,7 +19,7 @@ export function createExerciseView(
   const exercise =
     customKeyIds && customKeyIds.length > 0
       ? combineExercises(categoryId, customKeyIds)
-      : getExercise(categoryId, keyId);
+      : getExercise(categoryId, keyId, scaleModeId);
 
   const header = document.createElement('div');
   header.className = 'view-header';

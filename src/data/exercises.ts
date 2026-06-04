@@ -1,5 +1,19 @@
 import type { Exercise } from '../types';
 import { keys } from './keys';
+import {
+  CHROMATIC_ORDER,
+  noteToSemitones,
+  PITCH_TO_SEMITONE,
+  ROOT_CHROMATIC_LABELS,
+} from './pitch';
+import {
+  buildScaleNoteNames,
+  getScaleMode,
+  normalizeScaleModeId,
+  usesMinorRoots,
+  type ScaleCategoryId,
+  type ScaleModeId,
+} from './scaleModes';
 
 /** Songs: melody excerpts for trumpet practice */
 export const songs: {
@@ -59,21 +73,7 @@ export const chromaticExercises: { id: string; displayName: string; start: strin
   { id: 'G4-F5', displayName: 'G4 to F5', start: 'G4', end: 'F5' },
 ];
 
-/** Chromatic pitch order (ascending, using sharps) */
-const CHROMATIC_ORDER = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-const PITCH_TO_SEMITONE: Record<string, number> = {
-  C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5,
-  'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11,
-};
-
-export function noteToSemitones(note: string): number {
-  const match = note.match(/^([A-G][#b]?)(\d+)$/);
-  if (!match) return 48; // C4
-  const pitchIdx = PITCH_TO_SEMITONE[match[1]] ?? 0;
-  const octave = parseInt(match[2], 10);
-  return octave * 12 + pitchIdx;
-}
+export { noteToSemitones } from './pitch';
 
 function getChromaticNotes(start: string, end: string): string[] {
   let semitones = noteToSemitones(start);
@@ -152,6 +152,54 @@ export const scaleKeys: { id: string; displayName: string; scaleType: 'major' | 
   { id: 'Ebm', displayName: 'Eb Minor', scaleType: 'minor' },
 ];
 
+function applyChromaticDisplayRoots(
+  options: { root: string; keyId: string }[]
+): { root: string; displayRoot: string; keyId: string }[] {
+  const countBySemitone = new Map<number, number>();
+  for (const o of options) {
+    const semi = PITCH_TO_SEMITONE[o.root] ?? 0;
+    countBySemitone.set(semi, (countBySemitone.get(semi) ?? 0) + 1);
+  }
+
+  return options.map((o) => {
+    const semi = PITCH_TO_SEMITONE[o.root] ?? 0;
+    const chromaticLabel = ROOT_CHROMATIC_LABELS[semi];
+    const useChromaticLabel = (countBySemitone.get(semi) ?? 0) === 1;
+    return {
+      ...o,
+      displayRoot: useChromaticLabel ? chromaticLabel : o.root,
+    };
+  });
+}
+
+export function getScaleRootOptions(
+  categoryId: ScaleCategoryId
+): { root: string; displayRoot: string; keyId: string }[] {
+  const options = usesMinorRoots(categoryId)
+    ? scaleKeys
+        .filter((k) => k.scaleType === 'minor')
+        .map((k) => ({
+          root: k.id.replace(/m$/, ''),
+          keyId: k.id,
+        }))
+    : keys.map((k) => ({
+        root: k.id,
+        keyId: k.id,
+      }));
+
+  options.sort((a, b) => {
+    const diff = (PITCH_TO_SEMITONE[a.root] ?? 0) - (PITCH_TO_SEMITONE[b.root] ?? 0);
+    return diff !== 0 ? diff : a.root.localeCompare(b.root);
+  });
+
+  return applyChromaticDisplayRoots(options);
+}
+
+export function getDisplayRootForKeyId(keyId: string, categoryId: ScaleCategoryId): string {
+  const option = getScaleRootOptions(categoryId).find((o) => o.keyId === keyId);
+  return option?.displayRoot ?? keyId;
+}
+
 // Arpeggio: tonic, 3rd, 5th, octave, 5th, 3rd, tonic
 function getArpeggioNotes(keyId: string): string[] {
   const scale = scaleNotesByKey[keyId];
@@ -160,13 +208,18 @@ function getArpeggioNotes(keyId: string): string[] {
   return [tonic, third, fifth, octave, fifth, third, tonic];
 }
 
+function scaleNoteNamesToScore(ascending: string[]): string {
+  if (ascending.length === 0) return '';
+  const asc = `${ascending[0]}/q, ${ascending.slice(1).join(', ')}`;
+  const desc = ascending.slice(0, -1).reverse().join(', ');
+  return `${asc}, ${desc}`;
+}
+
 function getScaleNotes(keyId: string, scaleType: 'major' | 'minor'): string {
   const scale =
     scaleType === 'minor' ? minorScaleNotesByKey[keyId] : scaleNotesByKey[keyId];
   if (!scale) return '';
-  const asc = `${scale[0]}/q, ${scale.slice(1).join(', ')}`;
-  const desc = scale.slice(0, -1).reverse().join(', ');
-  return `${asc}, ${desc}`;
+  return scaleNoteNamesToScore(scale);
 }
 
 /** Build scale notes within a single octave (tonic through octave). */
@@ -183,7 +236,11 @@ function getHeldNote(keyId: string, scaleType?: 'major' | 'minor'): string {
   return `${notes[0]}/h, ${notes.slice(1).join(', ')}`;
 }
 
-export function getExercise(categoryId: string, keyId: string): Exercise {
+export function getExercise(
+  categoryId: string,
+  keyId: string,
+  scaleModeId?: ScaleModeId
+): Exercise {
   const key = keys.find((k) => k.id === keyId);
   const keyName = key?.displayName ?? keyId;
 
@@ -208,25 +265,46 @@ export function getExercise(categoryId: string, keyId: string): Exercise {
   }
 
   if (categoryId === 'scales') {
-    const scaleKey = scaleKeys.find((k) => k.id === keyId);
-    const scaleType = scaleKey?.scaleType ?? 'major';
-    const scale =
-      scaleType === 'minor'
-        ? minorScaleNotesByKey[keyId] ?? []
-        : scaleNotesByKey[keyId] ?? [];
-    const noteNames = [...scale, ...scale.slice(0, -1).reverse()];
-    const totalBeats = noteNames.length; // quarter notes = 1 beat each
-    const displayName = scaleKey?.displayName ?? keyName;
-    return {
-      id,
-      categoryId,
-      keyId,
-      title: `${displayName} Scale`,
-      notes: getScaleNotes(keyId, scaleType),
-      noteNames,
-      timeSignature: '4/4',
-      totalBeats,
-    };
+    const modeId = normalizeScaleModeId(scaleModeId, keyId);
+    const mode = getScaleMode(modeId);
+
+    if (mode?.useLegacyTables) {
+      const scaleKey = scaleKeys.find((k) => k.id === keyId);
+      const scaleType = modeId === 'natural-minor' ? 'minor' : 'major';
+      const scale =
+        scaleType === 'minor'
+          ? minorScaleNotesByKey[keyId] ?? []
+          : scaleNotesByKey[keyId] ?? [];
+      const noteNames = [...scale, ...scale.slice(0, -1).reverse()];
+      const totalBeats = noteNames.length;
+      const displayName = scaleKey?.displayName ?? keyName;
+      return {
+        id: `${categoryId}-${modeId}-${keyId}`,
+        categoryId,
+        keyId,
+        title: `${displayName} Scale`,
+        notes: getScaleNotes(keyId, scaleType),
+        noteNames,
+        timeSignature: '4/4',
+        totalBeats,
+      };
+    }
+
+    if (mode?.intervals) {
+      const ascending = buildScaleNoteNames(keyId, mode.intervals, mode.category);
+      const noteNames = [...ascending, ...ascending.slice(0, -1).reverse()];
+      const displayRoot = getDisplayRootForKeyId(keyId, mode.category);
+      return {
+        id: `${categoryId}-${modeId}-${keyId}`,
+        categoryId,
+        keyId,
+        title: `${displayRoot} ${mode.name} Scale`,
+        notes: scaleNoteNamesToScore(ascending),
+        noteNames,
+        timeSignature: '4/4',
+        totalBeats: noteNames.length,
+      };
+    }
   }
 
   if (categoryId === 'arpeggios') {

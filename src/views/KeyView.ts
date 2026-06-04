@@ -25,11 +25,9 @@ export function createKeyView(
         ? `Choose Etude`
         : categoryId === 'songs'
           ? `Choose Song`
-          : categoryId === 'scales' || categoryId === 'held-notes'
-          ? categoryId === 'scales'
-            ? `Choose Scale`
-            : `Choose Key for Held Notes`
-          : `Choose Key for ${categoryName}`;
+          : categoryId === 'held-notes'
+            ? `Choose Key for Held Notes`
+            : `Choose Key for ${categoryName}`;
   header.appendChild(backBtn);
   header.appendChild(title);
 
