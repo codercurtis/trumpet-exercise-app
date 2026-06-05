@@ -1,9 +1,76 @@
-import { getExercise, combineExercises } from '../data/exercises';
+import { getExercise, combineExercises, getScalePatterns, type ScalePattern } from '../data/exercises';
+import type { Exercise } from '../types';
 import type { ScaleModeId } from '../data/scaleModes';
 import { createBackButton } from '../components/BackButton';
 import { renderMusic } from '../components/MusicRenderer';
 import { playExercise } from '../audio/trumpetSound';
 import { getShowAnnotations } from '../settings';
+
+function renderMusicStaff(
+  container: HTMLElement,
+  exercise: Pick<Exercise, 'notes' | 'noteNames' | 'timeSignature' | 'totalBeats' | 'beamGroups' | 'keySignature' | 'beamIndices' | 'measureBoundaries'>
+): void {
+  requestAnimationFrame(() => {
+    try {
+      renderMusic(container, exercise.notes, {
+        timeSignature: exercise.timeSignature ?? '4/4',
+        noteNames: exercise.noteNames,
+        totalBeats: exercise.totalBeats,
+        beamGroups: exercise.beamGroups,
+        showAnnotations: getShowAnnotations(),
+        keySignature: exercise.keySignature,
+        beamIndices: exercise.beamIndices,
+        measureBoundaries: exercise.measureBoundaries,
+      });
+    } catch (err) {
+      console.error('Music render error:', err);
+      container.textContent = `Error rendering music: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  });
+}
+
+function createPatternSection(pattern: ScalePattern): HTMLElement {
+  const section = document.createElement('section');
+  section.className = 'scale-pattern-section';
+
+  const header = document.createElement('div');
+  header.className = 'scale-pattern-header';
+
+  const label = document.createElement('h2');
+  label.textContent = pattern.label;
+
+  const playBtn = document.createElement('button');
+  playBtn.className = 'play-button play-button--small';
+  playBtn.setAttribute('aria-label', `Play ${pattern.label}`);
+  playBtn.textContent = '▶ Play';
+  playBtn.type = 'button';
+  playBtn.addEventListener('click', () => {
+    playExercise({
+      notes: pattern.notes,
+      noteNames: pattern.noteNames,
+      timeSignature: '4/4',
+    });
+  });
+
+  header.appendChild(label);
+  header.appendChild(playBtn);
+
+  const musicContainer = document.createElement('div');
+  musicContainer.className = 'music-container' + (getShowAnnotations() ? '' : ' annotations-off');
+  musicContainer.dataset.debugBox = 'music-container';
+
+  section.appendChild(header);
+  section.appendChild(musicContainer);
+
+  renderMusicStaff(musicContainer, {
+    notes: pattern.notes,
+    noteNames: pattern.noteNames,
+    timeSignature: '4/4',
+    totalBeats: pattern.totalBeats,
+  });
+
+  return section;
+}
 
 export function createExerciseView(
   categoryId: string,
@@ -52,23 +119,19 @@ export function createExerciseView(
   root.appendChild(header);
   root.appendChild(musicContainer);
 
-  requestAnimationFrame(() => {
-    try {
-      renderMusic(musicContainer, exercise.notes, {
-        timeSignature: exercise.timeSignature ?? '4/4',
-        noteNames: exercise.noteNames,
-        totalBeats: exercise.totalBeats,
-        beamGroups: exercise.beamGroups,
-        showAnnotations: getShowAnnotations(),
-        keySignature: exercise.keySignature,
-        beamIndices: exercise.beamIndices,
-        measureBoundaries: exercise.measureBoundaries,
-      });
-    } catch (err) {
-      console.error('Music render error:', err);
-      musicContainer.textContent = `Error rendering music: ${err instanceof Error ? err.message : String(err)}`;
+  renderMusicStaff(musicContainer, exercise);
+
+  if (categoryId === 'scales' && scaleModeId && !customKeyIds?.length) {
+    const patterns = getScalePatterns(keyId, scaleModeId);
+    if (patterns.length > 0) {
+      const patternsContainer = document.createElement('div');
+      patternsContainer.className = 'scale-patterns';
+      for (const pattern of patterns) {
+        patternsContainer.appendChild(createPatternSection(pattern));
+      }
+      root.appendChild(patternsContainer);
     }
-  });
+  }
 
   return root;
 }

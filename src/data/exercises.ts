@@ -5,6 +5,7 @@ import {
   noteToSemitones,
   PITCH_TO_SEMITONE,
   ROOT_CHROMATIC_LABELS,
+  semitoneToNoteName,
 } from './pitch';
 import {
   buildScaleNoteNames,
@@ -215,11 +216,116 @@ function scaleNoteNamesToScore(ascending: string[]): string {
   return `${asc}, ${desc}`;
 }
 
-function getScaleNotes(keyId: string, scaleType: 'major' | 'minor'): string {
-  const scale =
-    scaleType === 'minor' ? minorScaleNotesByKey[keyId] : scaleNotesByKey[keyId];
-  if (!scale) return '';
-  return scaleNoteNamesToScore(scale);
+function noteNamesToQuarterScore(noteNames: string[]): string {
+  if (noteNames.length === 0) return '';
+  return `${noteNames[0]}/q, ${noteNames.slice(1).join(', ')}`;
+}
+
+function arpeggioUpDown(up: string[]): string[] {
+  return [...up, ...up.slice(0, -1).reverse()];
+}
+
+/** Ascending scale notes within one octave (tonic through octave). */
+export function getAscendingScaleNotes(keyId: string, scaleModeId?: ScaleModeId): string[] {
+  const modeId = normalizeScaleModeId(scaleModeId, keyId);
+  const mode = getScaleMode(modeId);
+
+  if (mode?.useLegacyTables) {
+    const scaleType = modeId === 'natural-minor' ? 'minor' : 'major';
+    const scale =
+      scaleType === 'minor'
+        ? minorScaleNotesByKey[keyId] ?? []
+        : scaleNotesByKey[keyId] ?? [];
+    return [...scale];
+  }
+
+  if (mode?.intervals) {
+    return buildScaleNoteNames(keyId, mode.intervals, mode.category);
+  }
+
+  return [];
+}
+
+export interface ScalePattern {
+  id: string;
+  label: string;
+  notes: string;
+  noteNames: string[];
+  totalBeats: number;
+}
+
+function getNinthNote(ascending: string[]): string | null {
+  if (ascending.length < 2) return null;
+  return semitoneToNoteName(noteToSemitones(ascending[1]) + 12);
+}
+
+function notesAtIndices(ascending: string[], indices: number[]): string[] {
+  return indices.map((i) => ascending[i]).filter(Boolean);
+}
+
+export function getScalePatterns(keyId: string, scaleModeId?: ScaleModeId): ScalePattern[] {
+  const ascending = getAscendingScaleNotes(keyId, scaleModeId);
+  if (ascending.length === 0) return [];
+
+  const patterns: ScalePattern[] = [];
+  const ninth = getNinthNote(ascending);
+
+  if (ascending.length >= 5) {
+    const up = notesAtIndices(ascending, [0, 2, 4]);
+    const noteNames = arpeggioUpDown(up);
+    patterns.push({
+      id: 'triad',
+      label: 'Triad (Root – 3rd – 5th)',
+      notes: noteNamesToQuarterScore(noteNames),
+      noteNames,
+      totalBeats: noteNames.length,
+    });
+  }
+
+  if (ascending.length >= 7) {
+    const up7 = notesAtIndices(ascending, [0, 2, 4, 6]);
+    const noteNames7 = arpeggioUpDown(up7);
+    patterns.push({
+      id: 'seventh',
+      label: '7th Chord',
+      notes: noteNamesToQuarterScore(noteNames7),
+      noteNames: noteNames7,
+      totalBeats: noteNames7.length,
+    });
+  }
+
+  if (ascending.length >= 7 && ninth) {
+    const up9 = [...notesAtIndices(ascending, [0, 2, 4, 6]), ninth];
+    const noteNames9 = arpeggioUpDown(up9);
+    patterns.push({
+      id: 'ninth',
+      label: '9th Chord',
+      notes: noteNamesToQuarterScore(noteNames9),
+      noteNames: noteNames9,
+      totalBeats: noteNames9.length,
+    });
+
+    const ninthUpScaleDown = [...up9, ...ascending.slice(0, -1).reverse()];
+    patterns.push({
+      id: 'ninth-up-scale-down',
+      label: '9th Chord ↑ / Scale ↓',
+      notes: noteNamesToQuarterScore(ninthUpScaleDown),
+      noteNames: ninthUpScaleDown,
+      totalBeats: ninthUpScaleDown.length,
+    });
+
+    const ninthDown = [ninth, ascending[6], ascending[4], ascending[2], ascending[0]];
+    const scaleUpNinthDown = [...ascending, ...ninthDown];
+    patterns.push({
+      id: 'scale-up-ninth-down',
+      label: 'Scale ↑ / 9th Chord ↓',
+      notes: noteNamesToQuarterScore(scaleUpNinthDown),
+      noteNames: scaleUpNinthDown,
+      totalBeats: scaleUpNinthDown.length,
+    });
+  }
+
+  return patterns;
 }
 
 /** Build scale notes within a single octave (tonic through octave). */
@@ -267,43 +373,40 @@ export function getExercise(
   if (categoryId === 'scales') {
     const modeId = normalizeScaleModeId(scaleModeId, keyId);
     const mode = getScaleMode(modeId);
+    const ascending = getAscendingScaleNotes(keyId, scaleModeId);
 
-    if (mode?.useLegacyTables) {
-      const scaleKey = scaleKeys.find((k) => k.id === keyId);
-      const scaleType = modeId === 'natural-minor' ? 'minor' : 'major';
-      const scale =
-        scaleType === 'minor'
-          ? minorScaleNotesByKey[keyId] ?? []
-          : scaleNotesByKey[keyId] ?? [];
-      const noteNames = [...scale, ...scale.slice(0, -1).reverse()];
-      const totalBeats = noteNames.length;
-      const displayName = scaleKey?.displayName ?? keyName;
-      return {
-        id: `${categoryId}-${modeId}-${keyId}`,
-        categoryId,
-        keyId,
-        title: `${displayName} Scale`,
-        notes: getScaleNotes(keyId, scaleType),
-        noteNames,
-        timeSignature: '4/4',
-        totalBeats,
-      };
-    }
-
-    if (mode?.intervals) {
-      const ascending = buildScaleNoteNames(keyId, mode.intervals, mode.category);
+    if (ascending.length > 0) {
       const noteNames = [...ascending, ...ascending.slice(0, -1).reverse()];
-      const displayRoot = getDisplayRootForKeyId(keyId, mode.category);
-      return {
-        id: `${categoryId}-${modeId}-${keyId}`,
-        categoryId,
-        keyId,
-        title: `${displayRoot} ${mode.name} Scale`,
-        notes: scaleNoteNamesToScore(ascending),
-        noteNames,
-        timeSignature: '4/4',
-        totalBeats: noteNames.length,
-      };
+      const totalBeats = noteNames.length;
+
+      if (mode?.useLegacyTables) {
+        const scaleKey = scaleKeys.find((k) => k.id === keyId);
+        const displayName = scaleKey?.displayName ?? keyName;
+        return {
+          id: `${categoryId}-${modeId}-${keyId}`,
+          categoryId,
+          keyId,
+          title: `${displayName} Scale`,
+          notes: scaleNoteNamesToScore(ascending),
+          noteNames,
+          timeSignature: '4/4',
+          totalBeats,
+        };
+      }
+
+      if (mode?.intervals) {
+        const displayRoot = getDisplayRootForKeyId(keyId, mode.category);
+        return {
+          id: `${categoryId}-${modeId}-${keyId}`,
+          categoryId,
+          keyId,
+          title: `${displayRoot} ${mode.name} Scale`,
+          notes: scaleNoteNamesToScore(ascending),
+          noteNames,
+          timeSignature: '4/4',
+          totalBeats,
+        };
+      }
     }
   }
 

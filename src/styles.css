@@ -63,6 +63,44 @@ body {
   background: #1a4a7a;
 }
 
+.play-button--small {
+  margin-left: 0;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.scale-patterns {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0 1rem 2rem;
+}
+
+.scale-pattern-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scale-pattern-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1rem;
+}
+
+.scale-pattern-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #eee;
+}
+
+.scale-pattern-section .music-container {
+  min-height: 120px;
+}
+
 .category-grid,
 .key-grid {
   display: grid;
