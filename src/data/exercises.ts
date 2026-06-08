@@ -221,6 +221,22 @@ function noteNamesToQuarterScore(noteNames: string[]): string {
   return `${noteNames[0]}/q, ${noteNames.slice(1).join(', ')}`;
 }
 
+function noteNamesToScore(
+  noteNames: string[],
+  halfNoteIndices: number[] = []
+): string {
+  if (noteNames.length === 0) return '';
+  const halfSet = new Set(halfNoteIndices);
+  const format = (note: string, i: number): string => (halfSet.has(i) ? `${note}/h` : note);
+  const first = halfSet.has(0) ? format(noteNames[0], 0) : `${noteNames[0]}/q`;
+  return `${first}, ${noteNames.slice(1).map((note, j) => format(note, j + 1)).join(', ')}`;
+}
+
+function scoreTotalBeats(noteNames: string[], halfNoteIndices: number[] = []): number {
+  const halfSet = new Set(halfNoteIndices);
+  return noteNames.reduce((sum, _, i) => sum + (halfSet.has(i) ? 2 : 1), 0);
+}
+
 function arpeggioUpDown(up: string[]): string[] {
   return [...up, ...up.slice(0, -1).reverse()];
 }
@@ -263,12 +279,45 @@ function notesAtIndices(ascending: string[], indices: number[]): string[] {
   return indices.map((i) => ascending[i]).filter(Boolean);
 }
 
+/** 1–3–2–4–3–5 … ascending through the octave (and 9th on the last pair). */
+function brokenThirdsUp(ascending: string[], ninth: string | null): string[] {
+  if (ascending.length < 3) return [];
+
+  const notes: string[] = [];
+  for (let i = 0; i <= ascending.length - 2; i++) {
+    notes.push(ascending[i]);
+    if (i + 2 < ascending.length) {
+      notes.push(ascending[i + 2]);
+    } else if (i === ascending.length - 2 && ninth) {
+      notes.push(ninth);
+    } else {
+      const step = noteToSemitones(ascending[1]) - noteToSemitones(ascending[0]);
+      notes.push(semitoneToNoteName(noteToSemitones(ascending[i]) + step * 2));
+    }
+  }
+  notes.push(ascending[ascending.length - 1]);
+  return notes;
+}
+
 export function getScalePatterns(keyId: string, scaleModeId?: ScaleModeId): ScalePattern[] {
   const ascending = getAscendingScaleNotes(keyId, scaleModeId);
   if (ascending.length === 0) return [];
 
   const patterns: ScalePattern[] = [];
   const ninth = getNinthNote(ascending);
+
+  if (ascending.length >= 3) {
+    const up = brokenThirdsUp(ascending, ninth);
+    const noteNames = arpeggioUpDown(up);
+    const peakIndex = up.length - 1;
+    patterns.push({
+      id: 'broken-thirds',
+      label: 'Broken Thirds',
+      notes: noteNamesToScore(noteNames, [peakIndex]),
+      noteNames,
+      totalBeats: scoreTotalBeats(noteNames, [peakIndex]),
+    });
+  }
 
   if (ascending.length >= 5) {
     const up = notesAtIndices(ascending, [0, 2, 4]);
