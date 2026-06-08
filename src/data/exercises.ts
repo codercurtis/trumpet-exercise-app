@@ -354,7 +354,7 @@ export function getScalePatterns(keyId: string, scaleModeId?: ScaleModeId): Scal
       totalBeats: noteNames9.length,
     });
 
-    const ninthUpScaleDown = [...up9, ...ascending.slice(0, -1).reverse()];
+    const ninthUpScaleDown = [...up9, ...[...ascending].reverse()];
     patterns.push({
       id: 'ninth-up-scale-down',
       label: '9th Chord ↑ / Scale ↓',
