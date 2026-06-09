@@ -40,15 +40,13 @@ export const trumpetFingering: Record<string, string> = {
   G5: 'Open',
   'Gb4': '2',
   'Gb5': '2',
-  'G#5': '1-2',
-  Ab5: '1-2',
-  A5: '1',
-  'A#5': '2',
-  Bb5: '2',
-  B5: 'Open',
-  C6: '1-2',
-  'Cb5': '2',
-  'E#5': '1',
+  'G#5': '2-3',
+  Ab5: '2-3',
+  A5: '1-2',
+  'A#5': '1',
+  Bb5: '1',
+  B5: '2',
+  C6: 'Open',
 };
 
 export function getFingering(noteName: string): string {
