@@ -1,4 +1,4 @@
-import { getScaleRootOptions } from '../data/exercises';
+import { ALL_ROOTS_KEY_ID, getScaleRootOptions } from '../data/exercises';
 import {
   getScaleModeOptions,
   SCALE_CATEGORIES,
@@ -89,6 +89,12 @@ export function createScaleSelectView(
   function populateRootOptions(categoryId: ScaleCategoryId): void {
     const options = getScaleRootOptions(categoryId);
     rootSelect.innerHTML = '';
+
+    const allRootsOpt = document.createElement('option');
+    allRootsOpt.value = ALL_ROOTS_KEY_ID;
+    allRootsOpt.textContent = 'All roots';
+    rootSelect.appendChild(allRootsOpt);
+
     for (const { displayRoot, keyId } of options) {
       const opt = document.createElement('option');
       opt.value = keyId;

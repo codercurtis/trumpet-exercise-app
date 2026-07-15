@@ -28,6 +28,7 @@ export const trumpetFingering: Record<string, string> = {
   'A#4': '1',
   Bb4: '1',
   B4: '2',
+  Cb5: '2',
   C5: 'Open',
   'C#5': '1-2',
   Db5: '1-2',

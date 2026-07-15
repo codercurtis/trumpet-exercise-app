@@ -96,7 +96,7 @@ const scaleNotesByKey: Record<string, string[]> = {
   D: ['D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C#5', 'D5'],
   A: ['A4', 'B4', 'C#5', 'D5', 'E5', 'F#5', 'G#5', 'A5'],
   E: ['E4', 'F#4', 'G#4', 'A4', 'B4', 'C#5', 'D#5', 'E5'],
-  B: ['B3', 'C#4', 'D#4', 'E4', 'F#4', 'G#4', 'A#4', 'B4'],
+  B: ['B4', 'C#5', 'D#5', 'E5', 'F#5', 'G#5', 'A#5', 'B5'],
   'F#': ['F#4', 'G#4', 'A#4', 'B4', 'C#5', 'D#5', 'E#5', 'F#5'],
   F: ['F4', 'G4', 'A4', 'Bb4', 'C5', 'D5', 'E5', 'F5'],
   Bb: ['Bb4', 'C5', 'D5', 'Eb5', 'F5', 'G5', 'A5', 'Bb5'],
@@ -173,6 +173,8 @@ function applyChromaticDisplayRoots(
   });
 }
 
+export const ALL_ROOTS_KEY_ID = 'all-roots';
+
 export function getScaleRootOptions(
   categoryId: ScaleCategoryId
 ): { root: string; displayRoot: string; keyId: string }[] {
@@ -194,6 +196,30 @@ export function getScaleRootOptions(
   });
 
   return applyChromaticDisplayRoots(options);
+}
+
+/** One option per chromatic pitch C→B (prefer flat enharmonics when both exist). */
+export function getAllRootsScaleOptions(
+  categoryId: ScaleCategoryId
+): { root: string; displayRoot: string; keyId: string }[] {
+  const bySemitone = new Map<number, { root: string; displayRoot: string; keyId: string }>();
+
+  for (const option of getScaleRootOptions(categoryId)) {
+    const semi = PITCH_TO_SEMITONE[option.root] ?? 0;
+    const existing = bySemitone.get(semi);
+    if (!existing) {
+      bySemitone.set(semi, option);
+      continue;
+    }
+    const preferred = ROOT_CHROMATIC_LABELS[semi];
+    if (option.displayRoot === preferred || option.root === preferred) {
+      bySemitone.set(semi, option);
+    }
+  }
+
+  return [...bySemitone.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, option]) => option);
 }
 
 export function getDisplayRootForKeyId(keyId: string, categoryId: ScaleCategoryId): string {

@@ -70,7 +70,7 @@ export const MAJOR_TONIC_BY_KEY: Record<string, string> = {
   D: 'D4',
   A: 'A4',
   E: 'E4',
-  B: 'B3',
+  B: 'B4',
   'F#': 'F#4',
   F: 'F4',
   Bb: 'Bb4',
